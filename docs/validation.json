@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-19",
+  "platform": "Windows",
+  "python": "3.14.7",
+  "checks": [
+    {
+      "command": "python -m ruff check .",
+      "exit_code": 0,
+      "summary": "All checks passed!"
+    },
+    {
+      "command": "python -m ruff format --check .",
+      "exit_code": 0,
+      "summary": "13 files already formatted"
+    },
+    {
+      "command": "python -m pytest -q",
+      "exit_code": 0,
+      "summary": "27 passed in 1.69s"
+    },
+    {
+      "command": "python -m build --outdir dist",
+      "exit_code": 0,
+      "summary": "Successfully built usbphone_control-0.1.0.tar.gz and usbphone_control-0.1.0-py3-none-any.whl"
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "usbphone_control-0.1.0-py3-none-any.whl",
+      "sha256": "1f0692977d51eeeff89a9f230ef05eafad6dabefc4871ee448df2b792f5cf2f7"
+    },
+    {
+      "file": "usbphone_control-0.1.0.tar.gz",
+      "sha256": "4913020876b48b3f50c56e37ae1ed0bcdcaac03ff065ada4c1bd59eaa33f2aa9"
+    }
+  ],
+  "live_provider_tested": false,
+  "real_usb_device_tested": false
+}

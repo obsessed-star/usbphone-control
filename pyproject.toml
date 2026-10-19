@@ -6,6 +6,8 @@ build-backend = "hatchling.build"
 name = "usbphone-control"
 version = "0.1.0"
 description = "A handwritten USB-only Android observation and action toolkit, with CLI and MCP interfaces."
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.11"
 dependencies = []
 
@@ -16,6 +18,10 @@ dev = ["pytest>=8,<10", "ruff>=0.12,<1", "build>=1,<2", "mcp>=1.20,<2"]
 [project.scripts]
 usbphone = "usbphone.cli:main"
 usbphone-mcp = "usbphone.mcp_server:main"
+
+[project.urls]
+Repository = "https://github.com/obsessed-star/usbphone-control"
+Issues = "https://github.com/obsessed-star/usbphone-control/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/usbphone"]

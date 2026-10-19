@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "usbphone": {
+      "command": "C:/path/to/venv/Scripts/python.exe",
+      "args": ["-m", "usbphone.mcp_server"],
+      "env": {
+        "ADB_PATH": "C:/Android/platform-tools/adb.exe",
+        "ANDROID_SERIAL": "YOUR_USB_DEVICE_SERIAL"
+      }
+    }
+  }
+}
