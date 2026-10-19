@@ -1,9 +1,29 @@
 import asyncio
+import base64
 import sys
 
 import pytest
 
 mcp = pytest.importorskip("mcp")
+
+
+def test_mcp_observation_returns_native_image_content(tmp_path):
+    from usbphone.mcp_server import create_server
+
+    image = tmp_path / "screen.png"
+    # A valid 1x1 PNG fixture, not a device screenshot.
+    image.write_bytes(
+        base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aYJkAAAAASUVORK5CYII="
+        )
+    )
+
+    class FixturePhone:
+        def observe(self):
+            return {"observation_id": "0" * 32, "screenshot": str(image)}
+
+    result = asyncio.run(create_server(FixturePhone()).call_tool("phone_observe", {}))
+    assert any(item.type == "image" and item.mimeType == "image/png" for item in result)
 
 
 def test_stdio_handshake_tool_discovery_and_rejected_action():
