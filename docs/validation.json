@@ -11,12 +11,12 @@
     {
       "command": "python -m ruff format --check .",
       "exit_code": 0,
-      "summary": "14 files already formatted"
+      "summary": "15 files already formatted"
     },
     {
       "command": "python -m pytest -q",
       "exit_code": 0,
-      "summary": "28 passed in 2.76s"
+      "summary": "30 passed in 1.68s"
     },
     {
       "command": "python -m build --outdir dist",
@@ -27,11 +27,11 @@
   "artifacts": [
     {
       "file": "usbphone_control-0.1.0-py3-none-any.whl",
-      "sha256": "1f0692977d51eeeff89a9f230ef05eafad6dabefc4871ee448df2b792f5cf2f7"
+      "sha256": "25b08ffa3335333703580d96d125c4e6404904747d0e8451c0b258f5c379849a"
     },
     {
       "file": "usbphone_control-0.1.0.tar.gz",
-      "sha256": "b7cebba5157f8d31a601829664a3a08bcefee7949b3797a3de657fe5611540a9"
+      "sha256": "7ff3bb1f83c6dd3b0297ca5621264b4d74aca69e28402f171f5e0fa3d353f56a"
     }
   ],
   "live_provider_tested": false,
