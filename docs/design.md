@@ -25,7 +25,7 @@ sequenceDiagram
 
 - USB transport must be confirmed by an explicit USB path in `adb devices -l` or by ADB's USB-only `-d get-serialno` selector. Native Windows ADB can omit the path. The fallback requires only one attached USB phone; ambiguity is rejected instead of inferred from serial naming. Network ADB and emulators are excluded even if a serial is supplied.
 - Auto-selection requires exactly one USB device and pins its serial. A newly connected phone never silently replaces a disconnected target.
-- Captures expire after 30 seconds by default. Consumed IDs cannot be replayed through another CLI process. Restore preserves the capture's age.
+- Captures expire after 30 seconds by default, measured from screenshot capture rather than the end of UI extraction. Consumed IDs cannot be replayed through another CLI process. Only the latest capture for a device can be restored; a failed refresh also invalidates its predecessor. Restore preserves the capture's original age.
 - Coordinates are integer screenshot pixels; booleans, negative coordinates and out-of-bounds points are rejected. Element IDs belong to one observation.
 - The host subprocess never uses `shell=True`. Android's remote shell still parses a command string, so each argument is quoted with `shlex.join`. Package names and key names are allowlisted.
 - `input text` supports printable ASCII without `%`. Unicode is rejected explicitly instead of silently corrupting Turkish text. A native IME companion is a future extension, not a shipped feature.

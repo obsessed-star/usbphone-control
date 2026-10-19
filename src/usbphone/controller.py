@@ -70,10 +70,25 @@ class Phone:
         self.serial = device.serial
         return device
 
+    def _latest_file(self, serial: str) -> Path:
+        identity = hashlib.sha256(serial.encode()).hexdigest()[:16]
+        return self.output / f"latest-{identity}.txt"
+
+    def _is_latest(self, observation_id: str, serial: str) -> bool:
+        try:
+            return self._latest_file(serial).read_text("utf-8") == observation_id
+        except OSError:
+            return False
+
     def observe(self) -> dict:
+        self._last = None
         device = self._device()
         serial = device.serial
+        self.output.mkdir(parents=True, exist_ok=True)
+        # A failed refresh must not resurrect the preceding CLI capture.
+        self._latest_file(serial).write_text("", encoding="utf-8")
         png = self.adb.run("-s", serial, "exec-out", "screencap", "-p")
+        captured_at, observed_at = time.time(), time.monotonic()
         if len(png) < 24 or png[:8] != b"\x89PNG\r\n\x1a\n" or png[12:16] != b"IHDR":
             raise PhoneError("Invalid screenshot. Secure Android screens may block capture.")
         width, height = struct.unpack(">II", png[16:24])
@@ -106,14 +121,15 @@ class Phone:
             "screenshot_sha256": hashlib.sha256(png).hexdigest(),
             "elements": elements,
             "warning": warning,
-            "captured_at": time.time(),
+            "captured_at": captured_at,
         }
         (directory / "observation.json").write_text(
             json.dumps(observation, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
         self._last = observation
-        self._observed_at = time.monotonic()
+        self._observed_at = observed_at
+        self._latest_file(serial).write_text(capture_id, encoding="utf-8")
         return observation
 
     def restore(self, observation_id: str) -> None:
@@ -131,6 +147,8 @@ class Phone:
             raise PhoneError("Observation expired. Observe the screen again.")
         if self.serial and self.serial != item["device"]["serial"]:
             raise PhoneError("Observation belongs to another device.")
+        if not self._is_latest(observation_id, item["device"]["serial"]):
+            raise PhoneError("Observation was superseded or a refresh failed. Observe again.")
         self.serial = item["device"]["serial"]
         self._last = item
         self._observed_at = time.monotonic() - age
@@ -140,6 +158,7 @@ class Phone:
             not self._last
             or self._last["observation_id"] != observation_id
             or time.monotonic() - self._observed_at > self.max_age
+            or not self._is_latest(observation_id, self._last["device"]["serial"])
         ):
             raise PhoneError("Stale or unknown observation. Observe before acting.")
         self._device()
