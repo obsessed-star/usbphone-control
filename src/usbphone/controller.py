@@ -82,6 +82,13 @@ class Phone:
 
     def observe(self) -> dict:
         self._last = None
+        # Invalidate disk state before probing the transport: even discovery can
+        # fail when a cable is unplugged. A later process must not reuse that view.
+        if self.output.exists():
+            pointers = [self._latest_file(self.serial)] if self.serial else self.output.glob("latest-*.txt")
+            for pointer in pointers:
+                if pointer.exists():
+                    pointer.write_text("", encoding="utf-8")
         device = self._device()
         serial = device.serial
         self.output.mkdir(parents=True, exist_ok=True)

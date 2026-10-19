@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "usbphone-control"
-version = "0.1.0"
+version = "0.1.1"
 description = "A handwritten USB-only Android observation and action toolkit, with CLI and MCP interfaces."
 readme = "README.md"
 license = "MIT"
@@ -12,8 +12,8 @@ requires-python = ">=3.11"
 dependencies = []
 
 [project.optional-dependencies]
-mcp = ["mcp>=1.20,<2"]
-dev = ["pytest>=8,<10", "ruff>=0.12,<1", "build>=1,<2", "mcp>=1.20,<2"]
+mcp = ["mcp>=2.3,<3"]
+dev = ["pytest>=8,<10", "ruff>=0.12,<1", "build>=1,<2", "mcp>=2.3,<3"]
 
 [project.scripts]
 usbphone = "usbphone.cli:main"

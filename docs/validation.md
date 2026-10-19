@@ -1,6 +1,6 @@
 # Validation record
 
-Initial local validation: **19 October 2026**, Windows, Python 3.14.7.
+Latest local validation: **20 October 2026**, Windows, Python 3.14.7. The combined agent/phone suite passed 58 tests.
 
 | Check | Observed result |
 |---|---|
@@ -11,9 +11,12 @@ Initial local validation: **19 October 2026**, Windows, Python 3.14.7.
 | MCP image output | SDK emits native PNG image content for a labeled 1×1 fixture |
 | USB transport logic | Marker-based USB and Windows pathless USB-selector fixtures tested |
 | Dispatch uncertainty | Timeout consumes ID; post-action capture failure returns unverified result |
+| Cable disconnected during discovery | Failed refresh invalidates the previous on-disk capture before probing ADB |
 | Physical device test | Not performed; local ADB returned no attached devices |
 
 Tests replace ADB with a deterministic fixture; they do not constitute a successful real-device demonstration. Screenshots used in transport-unit tests are minimal synthetic PNG headers for dimension parsing. The MCP image test uses a separate valid tiny PNG. No personal phone screenshots are published.
+
+Version 0.1.1 migrates the server to MCP SDK 2.3 and its `MCPServer` API so the phone package and LiteLLM agent can share one environment without an incompatible MCP 1 installation. Native image content, tool annotations, handshake and actionable tool errors are verified through the actual SDK/stdio transport. It also closes the disconnected-during-discovery capture invalidation gap found after the original 0.1.0 preview.
 
 Machine-readable local commands, result summaries and artifact hashes are in [validation.json](validation.json). Reproduce with [requirements-dev.lock](../requirements-dev.lock). CI additionally targets Windows/Linux and Python 3.11/3.14; see the live workflow status rather than assuming success from this configuration.
 

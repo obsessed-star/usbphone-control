@@ -23,7 +23,8 @@ def test_mcp_observation_returns_native_image_content(tmp_path):
             return {"observation_id": "0" * 32, "screenshot": str(image)}
 
     result = asyncio.run(create_server(FixturePhone()).call_tool("phone_observe", {}))
-    assert any(item.type == "image" and item.mimeType == "image/png" for item in result)
+    assert not result.is_error
+    assert any(item.type == "image" and item.mime_type == "image/png" for item in result.content)
 
 
 def test_stdio_handshake_tool_discovery_and_rejected_action():
@@ -34,9 +35,12 @@ def test_stdio_handshake_tool_discovery_and_rejected_action():
         async with stdio_client(parameters) as (read, write):
             async with mcp.ClientSession(read, write) as session:
                 initialized = await session.initialize()
-                assert initialized.serverInfo.name == "USBPhone Control"
+                assert initialized.server_info.name == "USBPhone Control"
                 listing = await session.list_tools()
                 assert {t.name for t in listing.tools} == {"phone_observe", "phone_act"}
+                annotations = {t.name: t.annotations for t in listing.tools}
+                assert annotations["phone_observe"].read_only_hint
+                assert not annotations["phone_act"].read_only_hint
                 result = await session.call_tool(
                     "phone_act",
                     {
@@ -45,7 +49,7 @@ def test_stdio_handshake_tool_discovery_and_rejected_action():
                         "params": {"key": "HOME"},
                     },
                 )
-                assert result.isError
+                assert result.is_error
                 assert "Stale" in result.content[0].text
 
     asyncio.run(exercise())
