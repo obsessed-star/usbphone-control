@@ -11,12 +11,12 @@
     {
       "command": "python -m ruff format --check .",
       "exit_code": 0,
-      "summary": "13 files already formatted"
+      "summary": "14 files already formatted"
     },
     {
       "command": "python -m pytest -q",
       "exit_code": 0,
-      "summary": "27 passed in 1.69s"
+      "summary": "28 passed in 2.76s"
     },
     {
       "command": "python -m build --outdir dist",
@@ -31,7 +31,7 @@
     },
     {
       "file": "usbphone_control-0.1.0.tar.gz",
-      "sha256": "4913020876b48b3f50c56e37ae1ed0bcdcaac03ff065ada4c1bd59eaa33f2aa9"
+      "sha256": "b7cebba5157f8d31a601829664a3a08bcefee7949b3797a3de657fe5611540a9"
     }
   ],
   "live_provider_tested": false,
