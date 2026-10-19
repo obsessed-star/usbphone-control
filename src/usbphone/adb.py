@@ -7,7 +7,7 @@ import re
 import shlex
 import shutil
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 class PhoneError(RuntimeError):
@@ -43,7 +43,10 @@ class ADB:
     def run(self, *args: str) -> bytes:
         try:
             result = subprocess.run(
-                [self.executable, *args], capture_output=True, timeout=self.timeout, check=False,
+                [self.executable, *args],
+                capture_output=True,
+                timeout=self.timeout,
+                check=False,
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
             )
         except FileNotFoundError as exc:
@@ -56,7 +59,17 @@ class ADB:
         return result.stdout
 
     def devices(self) -> list[Device]:
-        return parse_devices(self.run("devices", "-l").decode("utf-8", errors="replace"))
+        devices = parse_devices(self.run("devices", "-l").decode("utf-8", errors="replace"))
+        # Native Windows ADB can omit devpath (and therefore the usb: field).
+        # Ask ADB's USB-only selector instead of guessing from the serial format.
+        if devices and any(not d.usb for d in devices):
+            try:
+                usb_serial = self.run("-d", "get-serialno").decode("utf-8").strip()
+            except PhoneError:
+                usb_serial = None
+            if usb_serial:
+                devices = [replace(d, usb=True) if d.serial == usb_serial else d for d in devices]
+        return devices
 
     def select(self, serial: str | None = None) -> Device:
         devices = self.devices()
@@ -64,11 +77,14 @@ class ADB:
         if len(matches) != 1:
             raise PhoneError(
                 "Select exactly one USB device with --serial / ANDROID_SERIAL. "
-                "Connect a data cable and enable USB debugging; TCP and emulators are excluded."
+                "Connect one data cable, enable USB debugging and approve the RSA prompt. "
+                "TCP and emulators are excluded. If ADB omits USB paths, connect only one USB phone."
             )
         device = matches[0]
         if device.state != "device":
-            raise PhoneError(f"USB device is {device.state}. Unlock it and approve this computer's RSA prompt.")
+            raise PhoneError(
+                f"USB device is {device.state}. Unlock it and approve this computer's RSA prompt."
+            )
         return device
 
     def shell(self, serial: str, *args: str) -> bytes:

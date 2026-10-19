@@ -7,9 +7,9 @@ import pytest
 from usbphone.adb import ADB, Device, PhoneError, parse_devices
 from usbphone.controller import Phone, parse_ui
 
-XML = b'''<hierarchy><node text="Settings" clickable="true" enabled="true"
+XML = b"""<hierarchy><node text="Settings" clickable="true" enabled="true"
  resource-id="android:id/title" bounds="[0,0][200,100]"/>
- <node text="secret" password="true" bounds="[0,100][200,200]"/></hierarchy>'''
+ <node text="secret" password="true" bounds="[0,100][200,200]"/></hierarchy>"""
 
 
 class FakeADB:
@@ -55,6 +55,38 @@ DEF unauthorized usb:1-3 transport_id:4
     assert devices[-1].state == "unauthorized"
 
 
+def test_native_windows_usb_without_marker_uses_adb_usb_selector(monkeypatch):
+    adb = ADB()
+    calls = []
+
+    def run(*args):
+        calls.append(args)
+        return (
+            (b"USB123 device model:Pixel transport_id:1\n192.168.1.4:5555 device model:Pixel transport_id:2")
+            if args[0] == "devices"
+            else b"USB123\n"
+        )
+
+    monkeypatch.setattr(adb, "run", run)
+    devices = adb.devices()
+    assert devices[0].usb and not devices[1].usb
+    assert ("-d", "get-serialno") in calls
+    assert adb.select("USB123").serial == "USB123"
+
+
+def test_failed_windows_usb_selector_never_guesses_from_serial(monkeypatch):
+    adb = ADB()
+
+    def run(*args):
+        if args[0] == "devices":
+            return b"ABC device model:P transport_id:1"
+        raise PhoneError("more than one USB device")
+
+    monkeypatch.setattr(adb, "run", run)
+    with pytest.raises(PhoneError, match="exactly one USB"):
+        adb.select("ABC")
+
+
 @pytest.mark.parametrize("listing", ["", "TCP device model:P", "A device usb:1\nB device usb:2"])
 def test_device_selection_fails_closed(monkeypatch, listing):
     adb = ADB()
@@ -85,15 +117,24 @@ def test_host_never_uses_shell(monkeypatch):
         assert argv == ["adb", "devices", "-l"]
         assert not kwargs.get("shell")
         return subprocess.CompletedProcess(argv, 0, b"", b"")
+
     monkeypatch.setattr(subprocess, "run", run)
     assert ADB("adb").devices() == []
 
 
 def test_ui_filters_password_and_centers():
-    assert parse_ui(XML) == [{
-        "index": 0, "text": "Settings", "description": "", "resource_id": "android:id/title",
-        "bounds": [0, 0, 200, 100], "center": [100, 50], "clickable": True, "enabled": True,
-    }]
+    assert parse_ui(XML) == [
+        {
+            "index": 0,
+            "text": "Settings",
+            "description": "",
+            "resource_id": "android:id/title",
+            "bounds": [0, 0, 200, 100],
+            "center": [100, 50],
+            "clickable": True,
+            "enabled": True,
+        }
+    ]
 
 
 def test_observe_action_observe_and_no_replay(phone, monkeypatch):
@@ -109,13 +150,20 @@ def test_observe_action_observe_and_no_replay(phone, monkeypatch):
         Phone(phone.adb, output=phone.output).restore(first["observation_id"])
 
 
-@pytest.mark.parametrize("action,params", [
-    ("tap", {"x": -1, "y": 0}), ("tap", {"x": 1080, "y": 0}),
-    ("tap", {"x": True, "y": 0}), ("tap_element", {"index": -1}),
-    ("type_text", {"text": "Türkçe"}), ("type_text", {"text": "%s"}),
-    ("key", {"key": "POWER"}), ("launch", {"package": "com.foo;rm -rf /"}),
-    ("swipe", {"x1": 0, "y1": 0, "x2": 10, "y2": 10, "duration_ms": 0}),
-])
+@pytest.mark.parametrize(
+    "action,params",
+    [
+        ("tap", {"x": -1, "y": 0}),
+        ("tap", {"x": 1080, "y": 0}),
+        ("tap", {"x": True, "y": 0}),
+        ("tap_element", {"index": -1}),
+        ("type_text", {"text": "Türkçe"}),
+        ("type_text", {"text": "%s"}),
+        ("key", {"key": "POWER"}),
+        ("launch", {"package": "com.foo;rm -rf /"}),
+        ("swipe", {"x1": 0, "y1": 0, "x2": 10, "y2": 10, "duration_ms": 0}),
+    ],
+)
 def test_invalid_actions_do_not_dispatch(phone, action, params):
     before = phone.observe()
     n = len(phone.adb.calls)

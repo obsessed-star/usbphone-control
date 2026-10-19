@@ -34,18 +34,29 @@ def parse_ui(xml: bytes) -> list[dict]:
             continue
         if not any((a.get("text"), a.get("content-desc"), a.get("clickable") == "true")):
             continue
-        elements.append({
-            "index": len(elements), "text": a.get("text", ""),
-            "description": a.get("content-desc", ""), "resource_id": a.get("resource-id", ""),
-            "bounds": [x1, y1, x2, y2], "center": [(x1 + x2) // 2, (y1 + y2) // 2],
-            "clickable": a.get("clickable") == "true", "enabled": a.get("enabled") == "true",
-        })
+        elements.append(
+            {
+                "index": len(elements),
+                "text": a.get("text", ""),
+                "description": a.get("content-desc", ""),
+                "resource_id": a.get("resource-id", ""),
+                "bounds": [x1, y1, x2, y2],
+                "center": [(x1 + x2) // 2, (y1 + y2) // 2],
+                "clickable": a.get("clickable") == "true",
+                "enabled": a.get("enabled") == "true",
+            }
+        )
     return elements
 
 
 class Phone:
-    def __init__(self, adb: ADB | None = None, serial: str | None = None,
-                 output: str | Path = ".usbphone", max_age: float = 30):
+    def __init__(
+        self,
+        adb: ADB | None = None,
+        serial: str | None = None,
+        output: str | Path = ".usbphone",
+        max_age: float = 30,
+    ):
         self.adb = adb or ADB()
         self.serial = serial or os.getenv("ANDROID_SERIAL") or None
         self.output = Path(output)
@@ -87,13 +98,19 @@ class Phone:
             except PhoneError:
                 pass
         observation = {
-            "observation_id": capture_id, "device": asdict(device), "width": width, "height": height,
+            "observation_id": capture_id,
+            "device": asdict(device),
+            "width": width,
+            "height": height,
             "screenshot": str((directory / "screen.png").resolve()),
-            "screenshot_sha256": hashlib.sha256(png).hexdigest(), "elements": elements,
-            "warning": warning, "captured_at": time.time(),
+            "screenshot_sha256": hashlib.sha256(png).hexdigest(),
+            "elements": elements,
+            "warning": warning,
+            "captured_at": time.time(),
         }
         (directory / "observation.json").write_text(
-            json.dumps(observation, ensure_ascii=False, indent=2), encoding="utf-8",
+            json.dumps(observation, ensure_ascii=False, indent=2),
+            encoding="utf-8",
         )
         self._last = observation
         self._observed_at = time.monotonic()
@@ -119,16 +136,23 @@ class Phone:
         self._observed_at = time.monotonic() - age
 
     def _fresh(self, observation_id: str) -> dict:
-        if (not self._last or self._last["observation_id"] != observation_id
-                or time.monotonic() - self._observed_at > self.max_age):
+        if (
+            not self._last
+            or self._last["observation_id"] != observation_id
+            or time.monotonic() - self._observed_at > self.max_age
+        ):
             raise PhoneError("Stale or unknown observation. Observe before acting.")
         self._device()
         return self._last
 
     @staticmethod
     def _point(x, y, observation):
-        if (type(x) is not int or type(y) is not int or not 0 <= x < observation["width"]
-                or not 0 <= y < observation["height"]):
+        if (
+            type(x) is not int
+            or type(y) is not int
+            or not 0 <= x < observation["width"]
+            or not 0 <= y < observation["height"]
+        ):
             raise PhoneError("Coordinates must be integer pixels inside the latest screenshot.")
 
     def act(self, action: str, observation_id: str, **params) -> dict:
@@ -159,7 +183,9 @@ class Phone:
             if not isinstance(value, str) or not value or len(value) > 1000:
                 raise PhoneError("Text must contain 1..1000 characters.")
             if not value.isascii() or any(ord(c) < 32 for c in value) or "%" in value:
-                raise PhoneError("Stock ADB typing accepts printable ASCII without %. Enter Unicode on device.")
+                raise PhoneError(
+                    "Stock ADB typing accepts printable ASCII without %. Enter Unicode on device."
+                )
             command = ["input", "text", value.replace(" ", "%s")]
         elif action == "key":
             key = params.get("key", "")
