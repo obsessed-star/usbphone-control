@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "usbphone-control"
-version = "0.1.1"
+version = "0.2.0"
 description = "A handwritten USB-only Android observation and action toolkit, with CLI and MCP interfaces."
 readme = "README.md"
 license = "MIT"

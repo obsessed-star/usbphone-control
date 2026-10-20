@@ -12,6 +12,7 @@ import uuid
 import xml.etree.ElementTree as ET
 from dataclasses import asdict
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from usbphone.adb import ADB, PhoneError, validate_package
 
@@ -221,6 +222,27 @@ class Phone:
         elif action == "launch":
             package = validate_package(params.get("package", ""))
             command = ["monkey", "-p", package, "-c", "android.intent.category.LAUNCHER", "1"]
+        elif action == "open_url":
+            url = params.get("url", "")
+            if not isinstance(url, str) or len(url) > 4096 or any(c.isspace() for c in url):
+                raise PhoneError("Provide an HTTP(S) URL without whitespace (up to 4096 characters).")
+            try:
+                parsed = urlsplit(url)
+                valid = (
+                    parsed.scheme in {"https", "http"}
+                    and parsed.hostname
+                    and parsed.username is None
+                    and parsed.password is None
+                )
+                _ = parsed.port  # Reject malformed ports before dispatch.
+            except ValueError:
+                valid = False
+            if not valid or any(ord(c) < 32 or ord(c) == 127 for c in url):
+                raise PhoneError("Only HTTP(S) URLs with a hostname and without credentials are allowed.")
+            # Android resolves the URL on the phone; no desktop browser is involved.
+            command = ["am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", url]
+            if params.get("package"):
+                command.extend(["-p", validate_package(params["package"])])
         else:
             raise PhoneError(f"Unknown action: {action}")
         # Consume the observation BEFORE dispatch. A timeout must not allow blind replay.
@@ -233,6 +255,10 @@ class Phone:
         response = self.adb.shell(serial, *command)
         if action == "launch" and b"No activities found" in response:
             raise PhoneError("Package has no launcher activity or is not installed.")
+        if action == "open_url" and any(
+            token in response for token in (b"Error:", b"Exception", b"unable to resolve Intent")
+        ):
+            raise PhoneError("Android could not open the URL. Check the browser package and device.")
         time.sleep(0.3)
         try:
             after = self.observe()

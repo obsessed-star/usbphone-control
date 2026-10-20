@@ -37,7 +37,12 @@ def test_stdio_handshake_tool_discovery_and_rejected_action():
                 initialized = await session.initialize()
                 assert initialized.server_info.name == "USBPhone Control"
                 listing = await session.list_tools()
-                assert {t.name for t in listing.tools} == {"phone_observe", "phone_act"}
+                assert {t.name for t in listing.tools} == {
+                    "phone_observe",
+                    "phone_act",
+                    "phone_list_downloads",
+                    "phone_export_download",
+                }
                 annotations = {t.name: t.annotations for t in listing.tools}
                 assert annotations["phone_observe"].read_only_hint
                 assert not annotations["phone_act"].read_only_hint

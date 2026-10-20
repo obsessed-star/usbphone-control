@@ -79,12 +79,35 @@ Successful commands emit JSON to stdout. Actionable errors emit JSON to stderr w
 
 ## MCP server
 
+### Browser tasks and documents
+
+`phone.act("open_url", observation_id, url="https://example.org", package="com.android.chrome")`
+opens the URL on the phone and returns the next screen. Omit `package` to use Android's default handler.
+Only HTTP(S) URLs without embedded credentials are accepted. Capture/action freshness rules still apply.
+
+```bash
+python -m usbphone.cli downloads
+python -m usbphone.cli export-download certificate.pdf
+```
+
+These read only `/sdcard/Download`. Export saves a generated filename under the local capture directory,
+checks a 20 MiB size limit and compares device/local SHA-256. `transfer_verified=true` proves matching
+bytes; `content_verified=false` does not certify document identity or authenticity. Rejects symlinks,
+paths, empty files and changing/incomplete bytes. An old file is not evidence of a new download.
+
+The planner lives in the separate [GraphPilot agent](https://github.com/obsessed-star/graphpilot-agent).
+It can use these primitives for goal-driven application/document tasks. Real-site/device validation
+is pending; synthetic workflow fixtures do not demonstrate arbitrary website compatibility.
+
 ```bash
 python -m pip install -e ".[mcp]"
 python -m usbphone.mcp_server
 ```
 
-Configure an MCP client with the structure in [examples/mcp.json](examples/mcp.json), replacing the interpreter and ADB paths. The stdio server exposes `phone_observe` (text + image) and `phone_act` (one action + new capture). It opens no listening HTTP port. **The host must authorize actions**; tool annotations are descriptive hints, not an access-control system.
+Configure an MCP client with [examples/mcp.json](examples/mcp.json), replacing the interpreter and ADB paths.
+The stdio server exposes `phone_observe` (text + image), `phone_act` (one action + new capture),
+`phone_list_downloads` and `phone_export_download`. It opens no HTTP port. **The host must authorize
+actions and export writes**; annotations are hints, not an access-control system.
 
 ## Verify
 

@@ -6,6 +6,7 @@ import json
 
 from usbphone.adb import PhoneError
 from usbphone.controller import Phone
+from usbphone.downloads import export_download, list_downloads
 
 
 def create_server(phone: Phone | None = None):
@@ -33,7 +34,8 @@ def create_server(phone: Phone | None = None):
         """Perform ONE action using a fresh observation ID. Host must obtain user authorization.
 
         Actions: tap{x,y}, tap_element{index}, swipe{x1,y1,x2,y2,duration_ms},
-        type_text{text}, key{key:HOME|BACK|ENTER|BACKSPACE|RECENTS}, launch{package}.
+        type_text{text}, key{key:HOME|BACK|ENTER|BACKSPACE|RECENTS}, launch{package},
+        open_url{url,package?} (HTTP(S), opens on the phone).
         Returns a new observation. Read-only capture does not imply authorization for actions.
         """
         try:
@@ -44,6 +46,25 @@ def create_server(phone: Phone | None = None):
         if result.get("observation"):
             content.append(Image(path=result["observation"]["screenshot"]))
         return content
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=True, destructive_hint=False))
+    def phone_list_downloads() -> dict:
+        """List filenames in the USB phone's public Downloads folder; no private app storage."""
+        try:
+            return list_downloads(phone)
+        except PhoneError as exc:
+            raise ToolError(str(exc)) from exc
+
+    @server.tool(annotations=ToolAnnotations(read_only_hint=False, destructive_hint=False))
+    def phone_export_download(name: str) -> dict:
+        """Copy one public download to local capture storage and verify its bytes/hash.
+
+        Host must authorize the local write. This does not verify the document's meaning.
+        """
+        try:
+            return export_download(phone, name)
+        except PhoneError as exc:
+            raise ToolError(str(exc)) from exc
 
     return server
 

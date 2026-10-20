@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 — 2026-10-20
+
+- Open HTTP(S) sites on the USB phone using Android VIEW intents, with optional browser selection.
+- List public Downloads and export a bounded file with byte-count and device/local SHA-256 verification.
+- Expose browser navigation and download tools through Python, JSON CLI and MCP.
+- Reject unsafe URL schemes, remote paths, symlinks, oversized and changing downloads.
+- Exercise the real controller in website/download fixtures; physical-device validation remains pending.
+
 ## 0.1.1 — 2026-10-20
 
 - Migrate optional MCP support to SDK 2.3's `MCPServer`, compatible with the agent's model-tool pipeline.
